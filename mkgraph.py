@@ -7,33 +7,35 @@ user="rcrescen"
 host="localhost"
 password="rcrescen"
 
-try:
+backbones=["/biodiversidad/",\
+           "/curacion/biodiversidad/",\
+           "/obraartistica/",\
+           "/curacion/obraartistica/",\
+           "/proyectosuniversitarios/",\
+           "/proyectosuniversitarios/"]
+users_path={}
 
+try:
+    
     conn=psycopg2.connect("dbname='"+dbname+"' user='"+user+"' host='"+host+"' password='"+password+"'")
     cur=conn.cursor()
 
-    cur.execute("""SELECT request_url_c from nodes order by id""")
+    print 'fetching from DB...'
+    cur.execute("""SELECT session_id,referer, request_url from log_a order by folio""")
     nodes=cur.fetchall()
-
-    cur.execute("""SELECT session_id from sessions order by id""")
-    sessions=cur.fetchall();
-
-    for index in range(0, len(sessions)):
-        session=sessions[index][0]
-        cur.execute("""SELECT request_url_c from tracker_c where session_id='"""+session+"""' order by id""")
-        path=cur.fetchall()
-        if (len(path)>1):
-            for idx in range(1, len(path)):
-                cur.execute("""INSERT INTO paths(session_id,start, finish) VALUES (%s,%s,%s)""", (session, str(path[idx-1][0]), str(path[idx][0])))
+    nodes_length=len(nodes)
+    print 'extract sessions...'
+    for index in range(0, len(nodes)):
+        if(index%100000==0):
+            print (index*100)/nodes_length
+        session=str(nodes[index][0])
+        if(session in users_path):
+            users_path[session]['nav_path'].append(str(nodes[index][1]))
         else:
-            cur.execute("""INSERT INTO paths(session_id,start) VALUES ('"""+session+"""', '"""+str(path[0][0])+"""')""")
-
-        if(index%100==0):
-            print str(index)+"-"+str(len(sessions))+" as "+session
-            conn.commit()
-        if(index==len(sessions)-1):
-            conn.commit()
+            users_path[session]={'nav_path':[str(nodes[index][1])]}
+    print 'sessions extracted successfull'
+    print ''len(users_path)
         
 
-except:
-    print "Unable to connect with "+dbname;
+except psycopg2.Error as e:
+    print e.pgerror;
