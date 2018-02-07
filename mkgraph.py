@@ -19,7 +19,7 @@ def clear_ficha(ficha):
 dbname="http_log"
 user="reynaldo"
 host="10.1.6.58"
-password="recresaz16"
+password="foo"
 pretty_relations={}
 
 backbones=["/biodiversidad/",\
